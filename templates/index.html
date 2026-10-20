@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentia | Emotion Detection</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 40px 20px;
+            background: #111827;
+            color: #f9fafb;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        h1 {
+            color: #5eead4;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #9ca3af;
+            margin-bottom: 30px;
+        }
+
+        .video-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 12px;
+            background: #1f2937;
+            border-radius: 16px;
+        }
+
+        .video-container img {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        .note {
+            color: #9ca3af;
+            font-size: 14px;
+            margin-top: 24px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Sentia</h1>
+    <p class="subtitle">
+        Real-time facial expression classification
+    </p>
+
+    <div class="video-container">
+        <img src="{{ url_for('video_feed') }}"
+             alt="Live emotion detection feed">
+    </div>
+
+    
+    <div class="stats">
+        <h2>Live Statistics</h2>
+
+        <p>Faces detected now: <span id="faces-current">0</span></p>
+        <p>Total predictions: <span id="total-predictions">0</span></p>
+        <p>Most common expression: <span id="most-common">No predictions yet</span></p>
+
+        <h3>Expression Counts</h3>
+        <ul id="emotion-counts"></ul>
+
+        <button id="reset-stats">Reset Statistics</button>
+    </div>
+
+    <p class="note">
+        Predicted facial-expression labels are estimates,
+        not definitive measurements of a person's feelings.
+    </p>
+
+    <script>
+    async function updateStats() {
+        try {
+            const response = await fetch("/stats");
+            const stats = await response.json();
+
+            document.getElementById("faces-current").textContent =
+                stats.faces_current;
+
+            document.getElementById("total-predictions").textContent =
+                stats.total_predictions;
+
+            document.getElementById("most-common").textContent =
+                stats.most_common_emotion;
+
+            const countsList = document.getElementById("emotion-counts");
+            countsList.replaceChildren();
+
+            for (const [emotion, count] of Object.entries(stats.emotion_counts)) {
+                const item = document.createElement("li");
+                item.textContent = `${emotion}: ${count}`;
+                countsList.appendChild(item);
+            }
+        } catch (error) {
+            console.error("Could not load statistics:", error);
+        }
+    }
+
+    setInterval(updateStats, 1000);
+    updateStats();
+
+    document.getElementById("reset-stats").addEventListener("click", async () => {
+        await fetch("/reset_stats", { method: "POST" });
+        updateStats();
+    });
+    </script>
+
+</body>
+</html>
